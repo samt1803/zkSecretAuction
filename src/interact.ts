@@ -13,8 +13,8 @@
  * Run with node:     `$ node build/src/interact.js <deployAlias>`.
  */
 import fs from 'fs/promises';
-import { Mina, NetworkId, PrivateKey } from 'o1js';
-import { Add } from './Add.js';
+import { Field, Mina, NetworkId, PrivateKey } from 'o1js';
+import { Auction } from './Auction.js';
 
 // check command line arg
 let deployAlias = process.argv[2];
@@ -66,11 +66,11 @@ const fee = Number(config.fee) * 1e9; // in nanomina (1 billion = 1.0 mina)
 Mina.setActiveInstance(Network);
 let feepayerAddress = feepayerKey.toPublicKey();
 let zkAppAddress = zkAppKey.toPublicKey();
-let zkApp = new Add(zkAppAddress);
+let zkApp = new Auction(zkAppAddress);
 
 // compile the contract to create prover keys
 console.log('compile the contract...');
-await Add.compile();
+await Auction.compile();
 
 try {
   // call update() and send transaction
@@ -78,7 +78,7 @@ try {
   let tx = await Mina.transaction(
     { sender: feepayerAddress, fee },
     async () => {
-      await zkApp.update();
+      await zkApp.bid(Field(2));
     }
   );
   await tx.prove();

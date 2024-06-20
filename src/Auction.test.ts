@@ -1,5 +1,5 @@
 import { AccountUpdate, Field, Mina, PrivateKey, PublicKey } from 'o1js';
-import { Add } from './Add';
+import { Auction } from './Auction';
 
 /*
  * This file specifies how to test the `Add` example smart contract. It is safe to delete this file and replace
@@ -8,7 +8,7 @@ import { Add } from './Add';
  * See https://docs.minaprotocol.com/zkapps for more info.
  */
 
-let proofsEnabled = false;
+let proofsEnabled = true;
 
 describe('Add', () => {
   let deployerAccount: Mina.TestPublicKey,
@@ -17,10 +17,10 @@ describe('Add', () => {
     senderKey: PrivateKey,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
-    zkApp: Add;
+    zkApp: Auction;
 
   beforeAll(async () => {
-    if (proofsEnabled) await Add.compile();
+    if (proofsEnabled) await Auction.compile();
   });
 
   beforeEach(async () => {
@@ -32,7 +32,7 @@ describe('Add', () => {
 
     zkAppPrivateKey = PrivateKey.random();
     zkAppAddress = zkAppPrivateKey.toPublicKey();
-    zkApp = new Add(zkAppAddress);
+    zkApp = new Auction(zkAppAddress);
   });
 
   async function localDeploy() {
@@ -47,8 +47,8 @@ describe('Add', () => {
 
   it('generates and deploys the `Add` smart contract', async () => {
     await localDeploy();
-    const num = zkApp.num.get();
-    expect(num).toEqual(Field(1));
+    const num = zkApp.highestBid.get();
+    expect(num).toEqual(Field(0));
   });
 
   it('correctly updates the num state on the `Add` smart contract', async () => {
@@ -56,12 +56,12 @@ describe('Add', () => {
 
     // update transaction
     const txn = await Mina.transaction(senderAccount, async () => {
-      await zkApp.update();
+      await zkApp.bid(Field(2));
     });
     await txn.prove();
     await txn.sign([senderKey]).send();
 
-    const updatedNum = zkApp.num.get();
-    expect(updatedNum).toEqual(Field(3));
+    const updatedNum = zkApp.highestBid.get();
+    expect(updatedNum).toEqual(Field(2));
   });
 });

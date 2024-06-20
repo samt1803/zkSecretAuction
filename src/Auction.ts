@@ -1,4 +1,4 @@
-import { Field, SmartContract, state, State, method } from 'o1js';
+import { Field, SmartContract, state, State, method, Provable } from 'o1js';
 
 /**
  * Basic Example
@@ -9,18 +9,19 @@ import { Field, SmartContract, state, State, method } from 'o1js';
  *
  * This file is safe to delete and replace with your own contract.
  */
-export class Add extends SmartContract {
-  @state(Field) num = State<Field>();
+export class Auction extends SmartContract {
+  @state(Field) highestBid = State<Field>();
 
   init() {
     super.init();
-    this.num.set(Field(1));
+    this.highestBid.set(Field(0));
   }
 
-  @method async update() {
-    const currentState = this.num.getAndRequireEquals();
-    const newState = currentState.add(2);
-    this.num.set(newState);
+  @method async bid(amount: Field) {
+    const currentState = this.highestBid.getAndRequireEquals();
+    this.highestBid.set(
+      Provable.if(amount.greaterThan(currentState), amount, currentState)
+    );
   }
 
 
