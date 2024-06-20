@@ -19,9 +19,8 @@ export class Auction extends SmartContract {
 
   @method async bid(amount: Field) {
     const currentState = this.highestBid.getAndRequireEquals();
-    this.highestBid.set(
-      Provable.if(amount.greaterThan(currentState), amount, currentState)
-    );
+    amount.assertGreaterThan(currentState);
+    this.highestBid.set(amount);
   }
 
 
