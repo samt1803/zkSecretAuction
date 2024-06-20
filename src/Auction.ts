@@ -1,4 +1,4 @@
-import { Field, SmartContract, state, State, method, Provable } from 'o1js';
+import { Field, SmartContract, state, State, method, Provable, AccountUpdate } from 'o1js';
 
 /**
  * Basic Example
@@ -11,6 +11,7 @@ import { Field, SmartContract, state, State, method, Provable } from 'o1js';
  */
 export class Auction extends SmartContract {
   @state(Field) highestBid = State<Field>();
+  @state(Field) currentHighestBidder = State<Field>();
 
   init() {
     super.init();
@@ -18,9 +19,20 @@ export class Auction extends SmartContract {
   }
 
   @method async bid(amount: Field) {
-    const currentState = this.highestBid.getAndRequireEquals();
-    amount.assertGreaterThan(currentState);
-    this.highestBid.set(amount);
+    const currentBid = this.highestBid.getAndRequireEquals();
+    // amount.assertGreaterThan(currentBid);
+    // const bidderBalance = this.account.balance.getAndRequireEquals();
+    // const bidderBalanceBigInt = bidderBalance.toBigInt();
+
+    const senderPubKey = this.sender.getAndRequireSignature();
+    let accountUpdate = AccountUpdate.create(senderPubKey);
+    let balance = accountUpdate.account.balance.get();
+    balance.value.assertGreaterThan(amount);
+
+    this.highestBid.set(
+      Provable.if(amount.greaterThan(currentBid), amount, currentBid)
+    );
+    // this.currentHighestBidder.set(this.account.);
   }
 
 
