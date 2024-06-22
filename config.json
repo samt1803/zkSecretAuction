@@ -1,4 +1,14 @@
 {
   "version": 1,
-  "deployAliases": {}
+  "deployAliases": {
+    "zkauction": {
+      "networkId": "testnet",
+      "url": "https://api.minascan.io/node/devnet/v1/graphql",
+      "keyPath": "keys/zkauction.json",
+      "feepayerKeyPath": "/Users/sam/.cache/zkapp-cli/keys/samsminatestnet1.json",
+      "feepayerAlias": "samsminatestnet1",
+      "fee": "0.1",
+      "smartContract": "Auction"
+    }
+  }
 }
