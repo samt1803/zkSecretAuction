@@ -9,3 +9,26 @@ https://minascan.io/devnet/tx/5JuiL5kptx2YXvnkCSodPCZzJSAtYwS3KK7Hxnqx3FTwnLfn38
 
 reveal
 https://minascan.io/devnet/tx/5Jtj4vvZ2uHKQ3jxTAAomgwDKiyVVhP3jgzLRYn12hHMZWq8pD44?type=zk-tx
+
+
+
+
+
+
+
+run project:
+bun install
+bun run test
+
+
+interact with onchain
+https://docs.minaprotocol.com/zkapps/tutorials/deploying-to-a-network
+
+run interact script to call methods on devnet chain:
+build typescript into js:
+bun/npm run build
+
+this will create js in build folder, then:
+
+node build/src/interact.js zkauction
+
