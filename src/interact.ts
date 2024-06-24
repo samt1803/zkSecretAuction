@@ -78,8 +78,8 @@ try {
   let tx = await Mina.transaction(
     { sender: feepayerAddress, fee },
     async () => {
-      // await zkApp.bid(Field(2), Field(123456));
-      await zkApp.reveal(Field(123456));
+      await zkApp.bid(Field(7), Field(123455));
+      // await zkApp.reveal(Field(123456));
     }
   );
   await tx.prove();

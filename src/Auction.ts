@@ -1,29 +1,27 @@
-import { Field, SmartContract, state, State, method, Provable, AccountUpdate, Poseidon } from 'o1js';
+import { Field, SmartContract, state, State, method, Provable, AccountUpdate, Poseidon, Struct } from 'o1js';
 
-/**
- * Basic Example
- * See https://docs.minaprotocol.com/zkapps for more info.
- *
- * The Add contract initializes the state variable 'num' to be a Field(1) value by default when deployed.
- * When the 'update' method is called, the Add contract adds Field(2) to its 'num' contract state.
- *
- * This file is safe to delete and replace with your own contract.
- */
 export class Auction extends SmartContract {
-  @state(Field) highestBid = State<Field>();
-  @state(Field) currentHighestBidderHash = State<Field>();
+  @state(Field) highestBidsMerkleRoot = State<Field>();
+  @state(Field) highestBidderMerklRoot = State<Field>();
 
   init() {
     super.init();
-    this.highestBid.set(Field(0));
+    // this.highestBidHash.set(Field(0));
   }
 
-  @method async bid(amount: Field, secretPassword: Field) {
+  @method async bid(
+    auctionId: Field,
+    oldAmountMerkleWitness: Field,
+    newAmount: Field,
+    secretePassword: Field
+  ) {
+
     const currentBid = this.highestBid.getAndRequireEquals();
     // amount.assertGreaterThan(currentBid);
     // const bidderBalance = this.account.balance.getAndRequireEquals();
     // const bidderBalanceBigInt = bidderBalance.toBigInt();
 
+    // check if the bidder has enough balance
     const senderPubKey = this.sender.getAndRequireSignature();
     let accountUpdate = AccountUpdate.create(senderPubKey);
     let balance = accountUpdate.account.balance.get();
