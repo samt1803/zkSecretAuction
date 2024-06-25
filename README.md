@@ -61,3 +61,7 @@ achieved
         - local tests
 
 
+Link to the short presentation:
+
+https://docs.google.com/presentation/d/19Opnz1cHMeUGcMn0ES3juVdEhMLtayhVS7jqIDaKuZU/edit?usp=sharing
+
