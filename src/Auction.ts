@@ -1,5 +1,6 @@
-import { Field, SmartContract, state, State, method, Provable, AccountUpdate, Poseidon, Struct } from 'o1js';
+import { Field, SmartContract, state, State, method, Provable, AccountUpdate, Poseidon, MerkleWitness, MerkleTree } from 'o1js';
 
+class AuctionMerkleWitness extends MerkleWitness(4) {}
 export class Auction extends SmartContract {
   @state(Field) highestBidsMerkleRoot = State<Field>();
   @state(Field) highestBidderMerklRoot = State<Field>();
@@ -7,16 +8,25 @@ export class Auction extends SmartContract {
   init() {
     super.init();
     // this.highestBidHash.set(Field(0));
+    this.highestBidsMerkleRoot.set(new MerkleTree(4).getRoot()); // 4 is the depth of the merkle tree
+    this.highestBidderMerklRoot.set(new MerkleTree(4).getRoot());
   }
 
   @method async bid(
     auctionId: Field,
-    oldAmountMerkleWitness: Field,
+    oldAmountMerkleWitness: AuctionMerkleWitness,
+    oldAmount: Field,
+    // newAmountMerklWitness: MerkleMapWitness,
     newAmount: Field,
+    oldHighestBidderMerkleWitness: AuctionMerkleWitness,
     secretePassword: Field
   ) {
 
-    const currentBid = this.highestBid.getAndRequireEquals();
+    // verify that the old amount is correct and inside the merkle tree
+    const calculatedOldAmount = oldAmountMerkleWitness.calculateRoot(oldAmount);
+    this.highestBidsMerkleRoot.requireEquals(calculatedOldAmount);
+
+    // const currentBid = this.highestBid.getAndRequireEquals();
     // amount.assertGreaterThan(currentBid);
     // const bidderBalance = this.account.balance.getAndRequireEquals();
     // const bidderBalanceBigInt = bidderBalance.toBigInt();
@@ -25,11 +35,20 @@ export class Auction extends SmartContract {
     const senderPubKey = this.sender.getAndRequireSignature();
     let accountUpdate = AccountUpdate.create(senderPubKey);
     let balance = accountUpdate.account.balance.get();
-    balance.value.assertGreaterThan(amount);
-    amount.assertGreaterThan(currentBid);
+    balance.value.assertGreaterThan(newAmount);
+    newAmount.assertGreaterThan(oldAmount);
 
-    this.highestBid.set(amount);
-    this.currentHighestBidderHash.set(Poseidon.hash(senderPubKey.toFields().concat(secretPassword)));
+    // update the highest bid merkle tree
+    const newHighestBidsMerkleRoot = oldAmountMerkleWitness.computeRootAndKey(newAmount)[0];
+    this.highestBidsMerkleRoot.set(newHighestBidsMerkleRoot);
+
+    // update the highest bidder merkle tree
+    const newHighestBidderHash = Poseidon.hash(senderPubKey.toFields().concat(secretePassword));
+    const newHighestBidderMerkleRoot = oldHighestBidderMerkleWitness.computeRootAndKey(newHighestBidderHash)[0];
+
+
+    // this.highestBid.set(amount);
+    // this.currentHighestBidderHash.set(Poseidon.hash(senderPubKey.toFields().concat(secretPassword)));
 
     // this.highestBid.set(
     //   Provable.if(amount.greaterThan(currentBid), amount, currentBid)
@@ -38,10 +57,10 @@ export class Auction extends SmartContract {
   }
 
   @method async reveal(secretPassword: Field) {
-    const currentBidderHash = this.currentHighestBidderHash.getAndRequireEquals();
-    const senderPubKey = this.sender.getAndRequireSignature();
-    const hash = Poseidon.hash(senderPubKey.toFields().concat(secretPassword));
-    currentBidderHash.assertEquals(hash);
+    // const currentBidderHash = this.currentHighestBidderHash.getAndRequireEquals();
+    // const senderPubKey = this.sender.getAndRequireSignature();
+    // const hash = Poseidon.hash(senderPubKey.toFields().concat(secretPassword));
+    // currentBidderHash.assertEquals(hash);
   }
 
 
