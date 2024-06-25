@@ -32,3 +32,26 @@ this will create js in build folder, then:
 
 node build/src/interact.js zkauction
 
+
+
+
+
+Secret Auction
+- ... advantages of private voting/auctions
+- hidden bidders, privacy
+- verifyable onchain
+
+Technical 
+- Mina, o1js
+- Typescript
+- low entrance barrier
+- look at Protokit
+
+achieved
+- 2 versions:
+    - simple, all data onchain, "cleartext"
+        - local tests, deployed to devnet, interaction script
+    - data is offchain in merkletrees, merkle roots stored onchain
+        - local tests
+
+
