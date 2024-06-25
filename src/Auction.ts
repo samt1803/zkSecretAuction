@@ -14,17 +14,17 @@ export class Auction extends SmartContract {
 
   @method async bid(
     auctionId: Field,
-    oldAmountMerkleWitness: AuctionMerkleWitness,
+    highestBidMerkleWitness: AuctionMerkleWitness,
     oldAmount: Field,
     // newAmountMerklWitness: MerkleMapWitness,
     newAmount: Field,
-    oldHighestBidderMerkleWitness: AuctionMerkleWitness,
+    currentBidderMerkleWitness: AuctionMerkleWitness,
     secretePassword: Field
   ) {
 
     // verify that the old amount is correct and inside the merkle tree
-    const calculatedOldAmount = oldAmountMerkleWitness.calculateRoot(oldAmount);
-    this.highestBidsMerkleRoot.requireEquals(calculatedOldAmount);
+    const calculatedOldHighestBidMerkleRoot = highestBidMerkleWitness.calculateRoot(oldAmount);
+    this.highestBidsMerkleRoot.requireEquals(calculatedOldHighestBidMerkleRoot);
 
     // const currentBid = this.highestBid.getAndRequireEquals();
     // amount.assertGreaterThan(currentBid);
@@ -39,12 +39,13 @@ export class Auction extends SmartContract {
     newAmount.assertGreaterThan(oldAmount);
 
     // update the highest bid merkle tree
-    const newHighestBidsMerkleRoot = oldAmountMerkleWitness.computeRootAndKey(newAmount)[0];
+    const newHighestBidsMerkleRoot = highestBidMerkleWitness.calculateRoot(newAmount);
     this.highestBidsMerkleRoot.set(newHighestBidsMerkleRoot);
 
-    // update the highest bidder merkle tree
+    // update the bidder merkle tree
     const newHighestBidderHash = Poseidon.hash(senderPubKey.toFields().concat(secretePassword));
-    const newHighestBidderMerkleRoot = oldHighestBidderMerkleWitness.computeRootAndKey(newHighestBidderHash)[0];
+    const newHighestBidderMerkleRoot = currentBidderMerkleWitness.calculateRoot(newHighestBidderHash);
+    this.highestBidderMerklRoot.set(newHighestBidderMerkleRoot);
 
 
     // this.highestBid.set(amount);
