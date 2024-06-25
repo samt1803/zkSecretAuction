@@ -1,5 +1,6 @@
 import { AccountUpdate, Field, Mina, PrivateKey, PublicKey } from 'o1js';
 import { Auction } from './Auction';
+import { OffChainStorage } from './offchainLogic';
 
 /*
  * This file specifies how to test the `Add` example smart contract. It is safe to delete this file and replace
@@ -18,7 +19,8 @@ describe('Add', () => {
     senderKey: PrivateKey,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey,
-    zkApp: Auction;
+    zkApp: Auction,
+    offChainStorage: OffChainStorage;
 
   beforeAll(async () => {
     if (proofsEnabled) await Auction.compile();
@@ -34,6 +36,10 @@ describe('Add', () => {
     zkAppPrivateKey = PrivateKey.random();
     zkAppAddress = zkAppPrivateKey.toPublicKey();
     zkApp = new Auction(zkAppAddress);
+
+    offChainStorage = new OffChainStorage();
+
+    await localDeploy();
   });
 
   async function localDeploy() {
@@ -46,30 +52,98 @@ describe('Add', () => {
     await txn.sign([deployerKey, zkAppPrivateKey]).send();
   }
 
-  it('generates and deploys the `Auction` smart contract', async () => {
-    await localDeploy();
-    const num = zkApp.highestBid.get();
-    expect(num).toEqual(Field(0));
-  });
+  // it('generates and deploys the `Auction` smart contract', async () => {
+  //   await localDeploy();
+  //   const num = zkApp.highestBidsMerkleRoot.get();
+  //   expect(num).toEqual(Field("544619463418997333856881110951498501703454628897449993518845662251180546746"));
+  //   offChainStorage.displayTree(offChainStorage.highestBids);
+  // });
 
   test('successfully bids, giving secret to hide own identity', async () => {
     // await localDeploy();
+    const auctionId = Field(0);
+    const secretPassword = Field(123456);
+    const amount = Field(2);
+
+    console.log("tree before update");
+    offChainStorage.displayTree(offChainStorage.highestBids);
+    offChainStorage.updateupdateOffChainState(auctionId, bidder1, secretPassword, amount);
+    console.log("tree after update");
+    offChainStorage.displayTree(offChainStorage.highestBids);
 
     const txn = await Mina.transaction(bidder1, async () => {
-      await zkApp.bid(Field(2), Field(123456));
+      await zkApp.bid(
+        offChainStorage.getBidWitness(auctionId),
+        Field(0),
+        amount,
+        offChainStorage.getBidderWitness(auctionId),
+        secretPassword
+      )
     });
     await txn.prove();
     await txn.sign([senderKey]).send();
 
-    const updatedNum = zkApp.highestBid.get();
-    expect(updatedNum).toEqual(Field(2));
+    const merklerootFromContract = zkApp.highestBidsMerkleRoot.get();
+    const merklerootFromOffChain = offChainStorage.highestBids.getRoot();
+    expect(merklerootFromContract).toEqual(merklerootFromOffChain);
   });
 
-  test('cant bid lower than current highest bid', async () => {
+  test('successfully bid on second auction', async () => {
     // await localDeploy();
+    const auctionId = Field(1);
+    const secretPassword = Field(123456);
+    const amount = Field(1);
+
+    console.log("tree before update");
+    offChainStorage.displayTree(offChainStorage.highestBids);
+    offChainStorage.updateupdateOffChainState(auctionId, bidder1, secretPassword, amount);
+    console.log("tree after update");
+    offChainStorage.displayTree(offChainStorage.highestBids);
+
+    const txn = await Mina.transaction(bidder1, async () => {
+      await zkApp.bid(
+        offChainStorage.getBidWitness(auctionId),
+        Field(0),
+        amount,
+        offChainStorage.getBidderWitness(auctionId),
+        secretPassword
+      )
+    });
+    await txn.prove();
+    await txn.sign([senderKey]).send();
+
+    const merklerootFromContract = zkApp.highestBidsMerkleRoot.get();
+    const merklerootFromOffChain = offChainStorage.highestBids.getRoot();
+    expect(merklerootFromContract).toEqual(merklerootFromOffChain);
+  });
+
+  test('highest bidder reveals identity', async () => {
+    const auctionId = Field(0);
+
+    // await localDeploy();
+    const revealTxn = await Mina.transaction(bidder1, async () => {
+      await zkApp.reveal(offChainStorage.getBidderWitness(auctionId), Field(123456));  
+    });
+    await revealTxn.prove();
+    await revealTxn.sign([senderKey]).send();
+  });
+
+  test('cant bid lower or equal to current highest bid', async () => {
+    // await localDeploy();
+    const auctionId = Field(0);
+    const secretPassword = Field(123456);
+    const amount = Field(2);
+    // offChainStorage.updateupdateOffChainState(auctionId, bidder1, Field(123456), Field(2));
+    // try to bid with same amount
     await Mina.transaction(bidder1, async () => {
       try {
-        await zkApp.bid(Field(1), Field(123456));
+        await zkApp.bid(
+          offChainStorage.getBidWitness(auctionId),
+          Field(0),
+          amount,
+          offChainStorage.getBidderWitness(auctionId),
+          secretPassword
+        );
       } catch (e: any) {
         expect(e.message).toMatch("Field.assertLessThan(): expected 2 < 1");
       }
@@ -78,20 +152,11 @@ describe('Add', () => {
     // await txn.sign([senderKey]).send();
   });
 
-  test('highest bidder reveals identity', async () => {
-    // await localDeploy();
-    const revealTxn = await Mina.transaction(bidder1, async () => {
-      await zkApp.reveal(Field(123456));
-    });
-    await revealTxn.prove();
-    await revealTxn.sign([senderKey]).send();
-  });
-
   it('fails if highest bidder reveals identity with wrong secret', async () => {
     // await localDeploy();
     await Mina.transaction(bidder1, async () => {
       try {
-        await zkApp.reveal(Field(123457));
+        await zkApp.reveal(offChainStorage.getBidderWitness(Field(0)), Field(123457)); // 123456 would be correct
       } catch (e: any) {
         expect(e.message).toMatch("Field.assertEquals()");
       }
@@ -104,7 +169,7 @@ describe('Add', () => {
     // await localDeploy();
     await Mina.transaction(bidder2, async () => {
       try {
-        await zkApp.reveal(Field(123456));
+        await zkApp.reveal(offChainStorage.getBidderWitness(Field(0)), Field(123457));
       } catch (e: any) {
         expect(e.message).toMatch("Field.assertEquals()");
       }

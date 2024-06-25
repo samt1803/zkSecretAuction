@@ -1,6 +1,6 @@
 import { Field, SmartContract, state, State, method, Provable, AccountUpdate, Poseidon, MerkleWitness, MerkleTree } from 'o1js';
 
-class AuctionMerkleWitness extends MerkleWitness(4) {}
+export class AuctionMerkleWitness extends MerkleWitness(2) { }
 export class Auction extends SmartContract {
   @state(Field) highestBidsMerkleRoot = State<Field>();
   @state(Field) highestBidderMerklRoot = State<Field>();
@@ -8,12 +8,12 @@ export class Auction extends SmartContract {
   init() {
     super.init();
     // this.highestBidHash.set(Field(0));
-    this.highestBidsMerkleRoot.set(new MerkleTree(4).getRoot()); // 4 is the depth of the merkle tree
-    this.highestBidderMerklRoot.set(new MerkleTree(4).getRoot());
+    this.highestBidsMerkleRoot.set(new MerkleTree(2).getRoot()); // 4 is the depth of the merkle tree
+    this.highestBidderMerklRoot.set(new MerkleTree(2).getRoot());
   }
 
   @method async bid(
-    auctionId: Field,
+    // auctionId: Field,
     highestBidMerkleWitness: AuctionMerkleWitness,
     oldAmount: Field,
     // newAmountMerklWitness: MerkleMapWitness,
@@ -57,11 +57,11 @@ export class Auction extends SmartContract {
     // this.currentHighestBidder.set(this.account.);
   }
 
-  @method async reveal(secretPassword: Field) {
-    // const currentBidderHash = this.currentHighestBidderHash.getAndRequireEquals();
-    // const senderPubKey = this.sender.getAndRequireSignature();
-    // const hash = Poseidon.hash(senderPubKey.toFields().concat(secretPassword));
-    // currentBidderHash.assertEquals(hash);
+  @method async reveal(highestBidderMerkleWitness: AuctionMerkleWitness, secretPassword: Field) {
+    const senderPubKey = this.sender.getAndRequireSignature();
+    const calculatedHash = Poseidon.hash(senderPubKey.toFields().concat(secretPassword));
+    const calculatedMerkleRoot = highestBidderMerkleWitness.calculateRoot(calculatedHash);
+    this.highestBidderMerklRoot.requireEquals(calculatedMerkleRoot);
   }
 
 
