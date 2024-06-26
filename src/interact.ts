@@ -13,7 +13,7 @@
  * Run with node:     `$ node build/src/interact.js <deployAlias>`.
  */
 import fs from 'fs/promises';
-import { Field, Mina, NetworkId, PrivateKey } from 'o1js';
+import { Mina, NetworkId, PrivateKey } from 'o1js';
 import { Auction } from './Auction.js';
 
 // check command line arg
@@ -73,7 +73,6 @@ console.log('compile the contract...');
 await Auction.compile();
 
 try {
-  // call update() and send transaction
   console.log('build transaction and create proof...');
   let tx = await Mina.transaction(
     { sender: feepayerAddress, fee },

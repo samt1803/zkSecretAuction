@@ -2,13 +2,6 @@ import { AccountUpdate, Field, Mina, PrivateKey, PublicKey } from 'o1js';
 import { Auction } from './Auction';
 import { OffChainStorage } from './offchainLogic';
 
-/*
- * This file specifies how to test the `Add` example smart contract. It is safe to delete this file and replace
- * with your own tests.
- *
- * See https://docs.minaprotocol.com/zkapps for more info.
- */
-
 let proofsEnabled = true;
 
 describe('Add', () => {
@@ -51,13 +44,6 @@ describe('Add', () => {
     // this tx needs .sign(), because `deploy()` adds an account update that requires signature authorization
     await txn.sign([deployerKey, zkAppPrivateKey]).send();
   }
-
-  // it('generates and deploys the `Auction` smart contract', async () => {
-  //   await localDeploy();
-  //   const num = zkApp.highestBidsMerkleRoot.get();
-  //   expect(num).toEqual(Field("544619463418997333856881110951498501703454628897449993518845662251180546746"));
-  //   offChainStorage.displayTree(offChainStorage.highestBids);
-  // });
 
   test('successfully bids, giving secret to hide own identity', async () => {
     // await localDeploy();
@@ -133,7 +119,6 @@ describe('Add', () => {
     const auctionId = Field(0);
     const secretPassword = Field(123456);
     const amount = Field(2);
-    // offChainStorage.updateupdateOffChainState(auctionId, bidder1, Field(123456), Field(2));
     // try to bid with same amount
     await Mina.transaction(bidder1, async () => {
       try {
@@ -148,8 +133,6 @@ describe('Add', () => {
         expect(e.message).toMatch("Field.assertLessThan(): expected 2 < 1");
       }
     });
-    // await txn.prove();
-    // await txn.sign([senderKey]).send();
   });
 
   it('fails if highest bidder reveals identity with wrong secret', async () => {
@@ -161,8 +144,6 @@ describe('Add', () => {
         expect(e.message).toMatch("Field.assertEquals()");
       }
     });
-    // await revealTxn.prove();
-    // await revealTxn.sign([senderKey]).send();
   });
 
   it('fails if someone else tries to reveal identity, even if knowing the secret', async () => {
@@ -174,7 +155,5 @@ describe('Add', () => {
         expect(e.message).toMatch("Field.assertEquals()");
       }
     });
-    // await revealTxn.prove();
-    // await revealTxn.sign([deployerKey]).send();
   });
 });
