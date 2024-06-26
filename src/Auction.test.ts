@@ -1,13 +1,6 @@
 import { AccountUpdate, Field, Mina, PrivateKey, PublicKey } from 'o1js';
 import { Auction } from './Auction';
 
-/*
- * This file specifies how to test the `Add` example smart contract. It is safe to delete this file and replace
- * with your own tests.
- *
- * See https://docs.minaprotocol.com/zkapps for more info.
- */
-
 let proofsEnabled = true;
 
 describe('Add', () => {
@@ -54,7 +47,6 @@ describe('Add', () => {
 
   test('successfully bids, giving secret to hide own identity', async () => {
     // await localDeploy();
-
     const txn = await Mina.transaction(bidder1, async () => {
       await zkApp.bid(Field(2), Field(123456));
     });
@@ -74,8 +66,6 @@ describe('Add', () => {
         expect(e.message).toMatch("Field.assertLessThan(): expected 2 < 1");
       }
     });
-    // await txn.prove();
-    // await txn.sign([senderKey]).send();
   });
 
   test('highest bidder reveals identity', async () => {
@@ -96,8 +86,6 @@ describe('Add', () => {
         expect(e.message).toMatch("Field.assertEquals()");
       }
     });
-    // await revealTxn.prove();
-    // await revealTxn.sign([senderKey]).send();
   });
 
   it('fails if someone else tries to reveal identity, even if knowing the secret', async () => {
@@ -109,7 +97,5 @@ describe('Add', () => {
         expect(e.message).toMatch("Field.assertEquals()");
       }
     });
-    // await revealTxn.prove();
-    // await revealTxn.sign([deployerKey]).send();
   });
 });
